@@ -4,12 +4,9 @@ from tkinter import messagebox
 
 app = tk.Tk()
 app.title("Agri Mart -> Direct Market Access")
-app.geometry("500x520")
-app.configure(bg="#e8f5e9")
+app.configure(bg="#d32f2f")
+app.state("zoomed")   # ✅ Full screen
 
-cart = {}
-total = 0
-payment_method = tk.StringVar()
 
 
 page1 = tk.Frame(app, bg="#e8f5e9")
@@ -17,8 +14,8 @@ page2 = tk.Frame(app, bg="#e8f5e9")
 page3 = tk.Frame(app, bg="#e8f5e9")
 
 for frame in (page1, page2, page3):
-    frame.place(x=0.5, y=0.5,place=center, width=500, height=520)
-    
+    frame.place(x=2, y=2, width=520, height=600)
+
 vegetables = {
     "Tomato 🍅": 30,
     "Potato 🥔": 25,
