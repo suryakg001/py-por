@@ -1,0 +1,258 @@
+import tkinter as tk
+from tkinter import messagebox
+import qrcode
+from PIL import Image, ImageTk
+
+# ---------------- MAIN APP ----------------
+app = tk.Tk()
+app.title("Agri Mart -> Direct Market Access")
+app.state('zoomed')
+app.configure(bg="#e8f5e9")
+
+cart = {}
+total = 0
+payment_method = tk.StringVar()
+
+# ---------------- PAGES ----------------
+page1 = tk.Frame(app, bg="#e8f5e9")
+page2 = tk.Frame(app, bg="#e8f5e9")
+page3 = tk.Frame(app, bg="#e8f5e9")
+
+for frame in (page1, page2, page3):
+    frame.place(x=0, y=0, relwidth=1, relheight=1)
+
+# ---------------- DATA ----------------
+vegetables = {
+    "Tomato ": 30,
+    "Potato ": 25,
+    "Onion ": 40,
+    "Carrot ": 35,
+    "Cabbage ": 20
+}
+
+fruits = {
+    "Apple ": 50,
+    "Banana ": 40,
+    "Orange ": 35,
+    "Mango ": 60,
+    "Grapes ": 70
+}
+
+# Combined product lookup for prices
+products = {**vegetables, **fruits}
+
+# Configurable UPI ID for QR payments
+UPI_ID = "suryasurya20272-1@okhdfcbank"
+
+# ---------------- FUNCTIONS ----------------
+def show_page(frame):
+    frame.tkraise()
+
+def add_to_cart(item, price):
+    global total
+    cart[item] = cart.get(item, 0) + 1
+    total += price
+    messagebox.showinfo("Added", f"{item} added to cart")
+
+def go_to_cart():
+    cart_list.delete(0, tk.END)
+    for item, qty in cart.items():
+        cart_list.insert(tk.END, f"{item} x {qty}")
+    total_label.config(text=f"Total: ₹{total}")
+    show_page(page2)
+
+def place_order():
+    if not payment_method.get():
+        messagebox.showwarning("Payment", "Select payment method")
+        return
+    show_page(page3)
+
+def confirm_order():
+    address = address_text.get("1.0", tk.END).strip()
+    if address == "":
+        messagebox.showwarning("Address", "Enter delivery address")
+        return
+    messagebox.showinfo(
+        "Order Status",
+        " Ordered Successfully!\n\nThank you for shopping with Agri Mart"
+    )
+    app.destroy()
+
+# -------- BACK FUNCTIONS --------
+def back_to_market():
+    show_page(page1)
+
+def back_to_cart():
+    show_page(page2)
+
+# -------- CART ACTIONS --------
+def remove_from_cart():
+    global total
+    sel = cart_list.curselection()
+    if not sel:
+        messagebox.showwarning("Remove", "Select an item to remove")
+        return
+    idx = sel[0]
+    entry = cart_list.get(idx)
+    item = entry.split(" x ")[0]
+    if item not in cart:
+        return
+    price = products.get(item, 0)
+    # decrement quantity and total
+    cart[item] -= 1
+    total -= price
+    if cart[item] <= 0:
+        del cart[item]
+    go_to_cart()
+
+def clear_cart():
+    global total
+    cart.clear()
+    total = 0
+    go_to_cart()
+
+# ================= PAGE 1 =================
+tk.Label(page1, text=" Vegetable Market",
+         font=("Arial", 18, "bold"),
+         bg="#2e7d32", fg="white", pady=10).pack(fill="x")
+
+market_frame = tk.Frame(page1, bg="#e8f5e9")
+market_frame.pack(pady=15)
+
+for veg, price in vegetables.items():
+    card = tk.Frame(market_frame, bg="white", bd=2, relief="ridge")
+    card.pack(pady=6, padx=10, fill="x")
+
+    tk.Label(card, text=veg, font=("Arial", 12, "bold"),
+             bg="white").pack(side="left", padx=10)
+
+    tk.Label(card, text=f"₹{price} / kg",
+             font=("Arial", 11), bg="white").pack(side="left")
+
+    tk.Button(card, text="Add",
+              bg="#388e3c", fg="white",
+              command=lambda v=veg, p=price: add_to_cart(v, p)
+              ).pack(side="right", padx=10)
+
+for fruit, price in fruits.items():
+    card = tk.Frame(market_frame, bg="white", bd=2, relief="ridge")
+    card.pack(pady=6, padx=10, fill="x")
+
+    tk.Label(card, text=fruit, font=("Arial", 12, "bold"),
+             bg="white").pack(side="left", padx=10)
+
+    tk.Label(card, text=f"₹{price} / kg",
+             font=("Arial", 11), bg="white").pack(side="left")
+
+    tk.Button(card, text="Add",
+              bg="#388e3c", fg="white",
+              command=lambda v=fruit, p=price: add_to_cart(v, p)
+              ).pack(side="right", padx=10)
+
+tk.Button(page1, text=" Go to Cart",
+          bg="#388e3c", fg="white",
+          font=("Arial", 12),
+          command=go_to_cart).pack(pady=20)
+
+# ================= PAGE 2 =================
+tk.Label(page2, text=" Cart & Payment",
+         font=("Arial", 18, "bold"),
+         bg="#2e7d32", fg="white", pady=10).pack(fill="x")
+
+cart_list = tk.Listbox(page2, width=45, height=8)
+cart_list.pack(pady=15)
+
+controls_frame = tk.Frame(page2, bg="#e8f5e9")
+controls_frame.pack(pady=5)
+tk.Button(controls_frame, text="Remove Selected",
+          bg="#d32f2f", fg="white",
+          command=remove_from_cart).pack(side="left", padx=5)
+tk.Button(controls_frame, text="Clear Cart",
+          bg="#f57c00", fg="white",
+          command=clear_cart).pack(side="left", padx=5)
+
+total_label = tk.Label(page2, text="Total: ₹0",
+                       font=("Arial", 14, "bold"),
+                       bg="#e8f5e9")
+total_label.pack(pady=5)
+
+tk.Label(page2, text="Select Payment Method",
+         font=("Arial", 13, "bold"),
+         bg="#e8f5e9").pack(pady=10)
+
+tk.Radiobutton(page2, text="UPI (Google Pay/PhonePe)",
+               variable=payment_method, value="UPI",
+               bg="#e8f5e9").pack()
+
+def show_qr():
+    if payment_method.get() != "UPI":
+        messagebox.showwarning("QR Code", "Select UPI payment to show QR code")
+        return
+    if total <= 0:
+        messagebox.showwarning("QR Code", "Cart is empty")
+        return
+    # Build a simple UPI payment URI (uses configured `UPI_ID`)
+    upi_uri = f"upi://pay?pa={UPI_ID}&pn=Agri%20Mart&am={total}&cu=INR"
+    img = qrcode.make(upi_uri)
+    img = img.resize((300, 300))
+    qr_win = tk.Toplevel(app)
+    qr_win.title("UPI QR Code")
+    qr_img = ImageTk.PhotoImage(img)
+    lbl = tk.Label(qr_win, image=qr_img)
+    lbl.image = qr_img
+    lbl.pack(padx=10, pady=10)
+    tk.Label(qr_win, text=f"Amount: ₹{total}", font=("Arial", 12, "bold")).pack(pady=(0,10))
+
+tk.Button(page2, text="Show QR",
+          bg="#1976d2", fg="white",
+          command=show_qr).pack(pady=8)
+
+def _on_payment_change(*args):
+    # Auto-show QR when UPI is selected and cart has items
+    try:
+        if payment_method.get() == "UPI" and total > 0:
+            show_qr()
+    except Exception:
+        pass
+
+payment_method.trace_add('write', _on_payment_change)
+
+
+
+nav2 = tk.Frame(page2, bg="#e8f5e9")
+nav2.pack(pady=20)
+
+tk.Button(nav2, text=" Back",
+          bg="#388e3c", fg="white",
+          font=("Arial", 12),
+          command=back_to_market).pack(side="left", padx=10)
+
+tk.Button(nav2, text=" Address",
+          bg="#1b5e20", fg="white",
+          font=("Arial", 12),
+          command=place_order).pack(side="left", padx=10)
+
+# ================= PAGE 3 =================
+tk.Label(page3, text=" Delivery Address",
+         font=("Arial", 18, "bold"),
+         bg="#2e7d32", fg="white", pady=10).pack(fill="x")
+
+address_text = tk.Text(page3, width=45, height=8)
+address_text.pack(pady=20)
+
+nav3 = tk.Frame(page3, bg="#e8f5e9")
+nav3.pack(pady=20)
+
+tk.Button(nav3, text=" Back",
+          bg="#9e9e9e", fg="white",
+          font=("Arial", 12),
+          command=back_to_cart).pack(side="left", padx=10)
+
+tk.Button(nav3, text="Confirm Order",
+          bg="#388e3c", fg="white",
+          font=("Arial", 13),
+          command=confirm_order).pack(side="left", padx=10)
+
+# ---------------- START ----------------
+show_page(page1)
+app.mainloop()
